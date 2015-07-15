@@ -1,0 +1,128 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <!-- Step 1: import the element to test -->
+    <link rel="import" href="../mgl-map.html">
+  </head>
+  <body>
+
+    <!-- You can use the document as a place to set up your fixtures. -->
+    <mgl-map
+      lat="4.6476418"
+      lng="-74.0552243"
+      options='{"token": "pk.eyJ1Ijoib2xhbm9kIiwiYSI6IjdZdV9iTTQifQ.HP-razZKsNmITPgHs4ugIA"}'>
+    </mgl-map>
+
+    <script>
+      var mgl = mapboxgl;
+      var myMap = document.querySelector('mgl-map');
+
+      suite('<mgl-map>', function() {
+
+        test('has a "map" property', function() {
+          expect(myMap.mgl).to.be.an.instanceOf(mgl.Map);
+        });
+
+        test('defines the "lat" and "lng" properties', function() {
+          //
+          expect(myMap.lat).to.be.a('number')
+            .and.equal(4.6476418);
+          expect(myMap.lng).to.be.a('number')
+            .and.equal(-74.0552243);
+        });
+
+        test('map center matches "lat" and "lng" properties', function() {
+          //
+          var center = myMap.mgl.getCenter();
+          expect(center.lat).to.be.a('number')
+            .and.equal(4.6476418)
+          expect(center.lng).to.be.a('number')
+            .and.equal(-74.0552243);
+        });
+
+        // TODO find how to test
+        test.skip('change lat, lng property', function() {
+          var center;
+          myMap.lat = -10;
+          myMap.lng = 10;
+          //
+          center = myMap.mgl.getCenter();
+          expect(center.lat).to.equal(-10);
+          expect(center.lng).to.equal(10);
+          expect(myMap.getAttribute('lat')).to.equal('-10');
+          expect(myMap.getAttribute('lng')).to.equal('10');
+        });
+
+        test('default zoom level', function() {
+          expect(myMap.zoom).to.equal(10);
+        });
+
+        test('map zoom matches the "zoom" property', function() {
+          expect(myMap.mgl.getZoom()).to.equal(10);
+        });
+
+        // TODO find how to test
+        test.skip('change zoom property', function() {
+          myMap.zoom = 5;
+          //
+          expect(Math.round(myMap.mgl.getZoom())).to.equal(5);
+          expect(Math.round(+myMap.getAttribute('zoom'))).to.equal(5);
+        });
+
+        test('setZoom', function() {
+          expect(myMap.setZoom).to.be.a('function');
+          myMap.setZoom(15);
+          expect(myMap.zoom).to.equal(15);
+          expect(myMap.mgl.getZoom()).to.equal(15);
+          expect(myMap.getAttribute('zoom')).to.equal('15');
+        });
+
+        test('setCenter', function() {
+          expect(myMap.setCenter).to.be.a('function');
+          myMap.setCenter([0, 0]);
+          expect(myMap.lat).to.equal(0);
+          expect(myMap.lng).to.equal(0);
+          expect(myMap.mgl.getCenter().lat).to.equal(0);
+          expect(myMap.mgl.getCenter().lng).to.equal(0);
+        });
+
+        test('changing the map position updates lat,lng and element\'s attributes', function (done) {
+          myMap.mgl.jumpTo({center: [40,20]});
+          myMap.mgl.on('moveend', function () {
+            expect(myMap.lat).to.equal(40);
+            expect(myMap.lng).to.equal(20);
+            // attributes
+            expect(myMap.getAttribute('lat')).to.equal('40');
+            expect(myMap.getAttribute('lng')).to.equal('20');
+            done();
+          });
+        });
+
+        // test('marker added', function(done) {
+          // myEl.addEventListener('mgl-map:marker-added', function(event) {
+          //   // assert.equal(event.detail.sound, 'Pew pew!');
+          //   done();
+          // });
+          // myEl.addMarker();
+        // });
+
+      });
+    </script>
+
+  </body>
+</html>

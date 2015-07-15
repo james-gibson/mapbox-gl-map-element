@@ -1,0 +1,33 @@
+{
+  "name": "mgl-map",
+  "version": "1.0.0",
+  "authors": [
+    "Daniel Olano <daniel@olinguito.co>"
+  ],
+  "description": "Wrapper element around mapbox-gl map API",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "mapbox",
+    "webgl",
+    "map",
+    "maps",
+    "polymer"
+  ],
+  "main": "mgl-map.html",
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/olanod/mapbox-gl-map-element/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "mapbox-gl-js": "~0.8.1"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
+  }
+}

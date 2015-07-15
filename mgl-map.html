@@ -1,0 +1,141 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="stylesheet" href="../mapbox-gl-js/mapbox-gl.css">
+<script src="../mapbox-gl-js/mapbox-gl.js"></script>
+
+<!--
+Wrapper element around mapbox-gl map API.
+
+Example:
+    <code>&lt;mgl-map lat="..." lng="..."&gt;&lt;/mgl-map&gt;</code>
+
+@demo
+-->
+<dom-module id="mgl-map">
+
+  <style>
+    :host {
+      display: block;
+      box-sizing: border-box;
+      position: relative;
+    }
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+    }
+  </style>
+
+  <template>
+    <div id="map"></div>
+    <content select="mgl-marker"></content>
+    <content select="[marker]"></content>
+  </template>
+
+</dom-module>
+
+<script>
+(function() {
+  Polymer({
+    is: 'mgl-map',
+
+    properties: {
+      options: Object,
+      lat: {
+        type: Number,
+        reflectToAttribute: true
+      },
+      lng: {
+        type: Number,
+        reflectToAttribute: true
+      },
+      zoom: {
+        type: Number,
+        value: 10,
+        reflectToAttribute: true
+      }
+    },
+
+    observers: [
+      'updatePosition(lat, lng, zoom)'
+    ],
+
+    created: function() {
+      this._move = true;
+    },
+
+    ready: function() {
+      var self = this;
+      // set map options
+      this.options = typeof this.options === 'object' ? this.options : {};
+      this.options = Polymer.Base.extend({
+        container: this.$.map,
+        style: 'https://www.mapbox.com/mapbox-gl-styles/styles/outdoors-v7.json'
+      }, this.options);
+      // token is required by mapbox and should be defined
+      mapboxgl.accessToken = this.options.token;
+      this.mgl = new mapboxgl.Map(this.options);
+
+      // resize map to fill container after fully loaded
+      this.mgl.on('load', function() {
+        self.mgl.resize();
+      });
+      // set lat, lng, zoom when map changes
+      this.mgl.on('moveend', mapMoved.bind(this));
+      // manually set lat, lng on initialization
+      this.setCenter([this.lat, this.lng]);
+    },
+
+    // property changes
+    updatePosition: function(lat, lng, zoom) {
+      if (this._move) {
+        jumpTo(this, {center: [lat, lng], zoom: zoom}, true);
+      } else {
+        this._move = true;
+      }
+    },
+
+    // public methods
+    setCenter: function(center, animate) {
+      jumpTo(this, {center: center}, animate);
+    },
+
+    setZoom: function(zoom, animate) {
+      jumpTo(this, {zoom: zoom}, animate);
+    }
+  });
+
+  function mapMoved() {
+    var center = this.mgl.getCenter();
+    assignIfDifferent(this, 'lat', center.lat);
+    assignIfDifferent(this, 'lng', center.lng);
+    assignIfDifferent(this, 'zoom', this.mgl.getZoom());
+  }
+
+  function assignIfDifferent(self, name, val) {
+    if (self[name] !== val) {
+      self._move = false;
+      self[name] = val;
+    }
+  }
+
+  function jumpTo(self, opts, animate) {
+    var animate = animate || false,
+      options = {
+        center: [self.lat, self.lng],
+        zoom: self.zoom,
+        bearing: 0,
+        pitch: 0
+      };
+    Polymer.Base.extend(options, opts);
+    if (self.mgl) {
+      if (animate) {
+        self.mgl.flyTo(options);
+      } else {
+        self.mgl.jumpTo(options);
+      }
+    }
+  }
+})();
+</script>
