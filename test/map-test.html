@@ -22,17 +22,48 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <body>
 
     <!-- You can use the document as a place to set up your fixtures. -->
-    <mgl-map
-      lat="4.6476418"
-      lng="-74.0552243"
-      options='{"token": "pk.eyJ1Ijoib2xhbm9kIiwiYSI6IjdZdV9iTTQifQ.HP-razZKsNmITPgHs4ugIA"}'>
-    </mgl-map>
+    <mgl-map lat="4.6476418" lng="-74.0552243"></mgl-map>
 
     <script>
       var mgl = mapboxgl;
       var myMap = document.querySelector('mgl-map');
 
+      suite('mgl.options', function() {
+        
+        test('option.token', function() {
+          var token = 'pk.eyJ1Ijoib2xhbm9kIiwiYSI6IjdZdV9iTTQifQ.HP-razZKsNmITPgHs4ugIA';
+          myMap.set('options.token', token);
+          expect(mapboxgl.accessToken).to.equal(token);
+        });
+        
+        test('option.style', function() {
+          myMap.mgl.setStyle(null);
+          myMap.set('options.style', 'https://www.mapbox.com/mapbox-gl-styles/styles/outdoors-v7.json');
+          expect(myMap.mgl.style).to.be.instanceOf(mgl.Style);            
+        });
+
+        // TODO support observing more options
+        test.skip('option.interactive', function() {});          
+        test.skip('option.minZoom', function() {});
+        test.skip('option.maxZoom', function() {});
+        test.skip('option.bearing', function() {});
+        test.skip('option.pitch', function() {});
+        test.skip('option.scrollZoom', function() {});
+        test.skip('option.boxZoom', function() {});
+        test.skip('option.dragRotate', function() {});
+        test.skip('option.dragPan', function() {});
+        test.skip('option.keyboard', function() {});
+        test.skip('option.doubleClickZoom', function() {});
+        test.skip('option.pinch', function() {});
+        test.skip('option.bearingSnap', function() {});
+        test.skip('option.hash', function() {});
+        test.skip('option.attributionControl', function() {});
+        test.skip('option.failIfMajorPerformanceCaveat', function() {});
+        test.skip('option.preserveDrawingBuffer', function() {});
+      });
+      
       suite('<mgl-map>', function() {
+        //
 
         test('has a "map" property', function() {
           expect(myMap.mgl).to.be.an.instanceOf(mgl.Map);
@@ -101,7 +132,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           expect(myMap.mgl.getCenter().lng).to.equal(0);
         });
 
-        test('changing the map position updates lat,lng and element\'s attributes', function (done) {
+        test('changing the map position updates lat,lng and element\'s attributes', function(done) {
           myMap.mgl.jumpTo({center: [40,20]});
           myMap.mgl.on('moveend', function () {
             expect(myMap.lat).to.equal(40);
@@ -112,15 +143,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           });
         });
-
-        // test('marker added', function(done) {
-          // myEl.addEventListener('mgl-map:marker-added', function(event) {
-          //   // assert.equal(event.detail.sound, 'Pew pew!');
-          //   done();
-          // });
-          // myEl.addMarker();
-        // });
-
       });
     </script>
 

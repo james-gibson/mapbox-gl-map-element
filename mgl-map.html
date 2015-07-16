@@ -60,7 +60,9 @@ Example:
     },
 
     observers: [
-      'updatePosition(lat, lng, zoom)'
+      'updatePosition(lat, lng, zoom)',
+      'updateStyleOpt(options.style)',
+      'updateTokenOpt(options.token)',
     ],
 
     created: function() {
@@ -71,12 +73,7 @@ Example:
       var self = this;
       // set map options
       this.options = typeof this.options === 'object' ? this.options : {};
-      this.options = Polymer.Base.extend({
-        container: this.$.map,
-        style: 'https://www.mapbox.com/mapbox-gl-styles/styles/outdoors-v7.json'
-      }, this.options);
-      // token is required by mapbox and should be defined
-      mapboxgl.accessToken = this.options.token;
+      this.options.container = this.$.map;
       this.mgl = new mapboxgl.Map(this.options);
 
       // resize map to fill container after fully loaded
@@ -90,6 +87,17 @@ Example:
     },
 
     // property changes
+    // options changes
+    updateStyleOpt: function(style) {
+      if (this.mgl) {
+        this.mgl.setStyle(style);      
+      }
+    },
+    
+    updateTokenOpt: function(token) {
+      mapboxgl.accessToken = token;
+    },
+    
     updatePosition: function(lat, lng, zoom) {
       if (this._move) {
         jumpTo(this, {center: [lat, lng], zoom: zoom}, true);
