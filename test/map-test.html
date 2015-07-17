@@ -143,6 +143,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           });
         });
+        
+        test('assign multiple times, move once', function(done) {
+          var WAIT_TIME = 1; // same as used in the code
+          myMap.mgl.flyTo = sinon.spy();
+          myMap.lat = 59;
+          myMap.lng = 7;
+          myMap.zoom = 6;
+          setTimeout(function() {
+            expect(myMap.mgl.flyTo).to.have.been.calledOnce;          
+            delete myMap.mgl.flyTo;
+            done();
+          }, WAIT_TIME + 1);
+        });
       });
     </script>
 

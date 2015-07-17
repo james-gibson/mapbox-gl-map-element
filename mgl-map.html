@@ -37,6 +37,10 @@ Example:
 
 <script>
 (function() {
+  // When lat, lng, zoom are asigned in a row, 
+  // wait 'WAIT_TIME' before moving the map so it moves just once
+  var WAIT_TIME = 1; // ms
+  
   Polymer({
     is: 'mgl-map',
 
@@ -99,11 +103,14 @@ Example:
     },
     
     updatePosition: function(lat, lng, zoom) {
+      var self = this;
+      clearTimeout(this._moveTimeout);
       if (this._move) {
-        jumpTo(this, {center: [lat, lng], zoom: zoom}, true);
-      } else {
-        this._move = true;
+        this._moveTimeout = setTimeout(function() {
+            jumpTo(self, {center: [lat, lng], zoom: zoom}, true);
+        }, WAIT_TIME);
       }
+      this._move = true;
     },
 
     // public methods
