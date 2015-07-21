@@ -14,23 +14,40 @@ Example:
 
   <style>
     :host {
-      display: block;
       box-sizing: border-box;
+      display: block;
+      overflow: hidden;
       position: relative;
     }
     #map {
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      z-index: 0;
+    }
+    #div-markers {
+      height: 0;
+      left: 50%;
+      position: absolute;
+      top: 50%;
+      width: 0;
+      z-index: 1;
+    }
+    #div-markers content::content [marker] {
+      left: 0;
       position: absolute;
       top: 0;
-      bottom: 0;
-      right: 0;
-      left: 0;
     }
   </style>
 
   <template>
     <div id="map"></div>
     <content select="mgl-marker"></content>
-    <content select="[marker]"></content>
+    <div id="div-markers">
+      <content select="[marker]"></content>
+    </div>
   </template>
 
 </dom-module>
@@ -58,7 +75,7 @@ Example:
       },
       zoom: {
         type: Number,
-        value: 10,
+        value: 5,
         reflectToAttribute: true
       }
     },
@@ -74,11 +91,14 @@ Example:
     },
 
     ready: function() {
-      var self = this;
+      var self = this,
+        markerElements = this.$['div-markers'].firstElementChild.getDistributedNodes(),
+        mapTransform;
       // set map options
       this.options = typeof this.options === 'object' ? this.options : {};
       this.options.container = this.$.map;
       this.mgl = new mapboxgl.Map(this.options);
+      mapTransform = this.mgl.transform;
 
       // resize map to fill container after fully loaded
       this.mgl.on('load', function() {
@@ -88,6 +108,25 @@ Example:
       this.mgl.on('moveend', mapMoved.bind(this));
       // manually set lat, lng on initialization
       this.setCenter([this.lat, this.lng]);
+      
+      // div markers positioning
+      // set container position
+      transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
+      // set markers position
+      positionMarkers(markerElements, mapTransform);
+      // listen to map movement
+      this.mgl.on('move', function(e) {
+        transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
+      });
+      // relocate markers when zooming
+      this.mgl.on('zoom', function(e) {
+        transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
+        positionMarkers(markerElements, mapTransform);
+      });
+      // rotate markers in the oposite direction of map's rotation
+      this.mgl.on('rotate', function(e) {
+        positionMarkers(markerElements, mapTransform);
+      });
     },
 
     // property changes
@@ -102,6 +141,9 @@ Example:
       mapboxgl.accessToken = token;
     },
     
+    /**
+     *  
+     */
     updatePosition: function(lat, lng, zoom) {
       var self = this;
       clearTimeout(this._moveTimeout);
@@ -154,5 +196,28 @@ Example:
       }
     }
   }
+  
+  /**
+   *  Position div markers
+   */
+  function positionMarkers(markers, mTransform) {
+    markers = Array.prototype.slice.call(markers);
+    markers.forEach(function(m) {
+      var lat = +m.getAttribute('lat') || 0,
+        lng = +m.getAttribute('lng') || 0,
+        x = mTransform.lngX(lng);
+        y = mTransform.latY(lat);
+      transform(m, x, y, mTransform.bearing);
+    });
+  }
+  
+  function transform(ele, x, y, rotate, rotateFirst) {
+    var rotateFirst = rotateFirst || false,
+      rotate = rotate || 0;
+      rotation = 'rotate(' + rotate + 'deg)',
+      translation = 'translate3d(' + x + 'px,' + y + 'px, 0)';
+    ele.style.transform = rotateFirst ? rotation + ' ' + translation : translation + ' ' + rotation;
+  }
+  
 })();
 </script>

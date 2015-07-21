@@ -14,11 +14,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
     <title>mapbox-gl-map Demo</title>
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script>
+      window.Polymer = window.Polymer || {};
+      window.Polymer.dom = 'shadow';
+    </script>
     <link rel="import" href="../mgl-map.html">
     <style>
       mgl-map {
         height: 500px;
         width: 600px;
+      }
+      [marker] {
+        height: 30px;
+        width: 30px;
+        background-color: orange;
       }
     </style>
   </head>
@@ -27,13 +36,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <p>An example of <code>&lt;mgl-map&gt;</code>:</p>
 
     <mgl-map
-      lat="4.6476418"
-      lng="-74.0552243"
+      lat="4.69"
+      lng="-74.07"
+      zoom="15"
       options='{"token": "pk.eyJ1Ijoib2xhbm9kIiwiYSI6IjdZdV9iTTQifQ.HP-razZKsNmITPgHs4ugIA", "style": "https://www.mapbox.com/mapbox-gl-styles/styles/outdoors-v7.json"}'>
+      
+      <div marker lat="4.6922228" lng="-74.0706172"></div>
+      <div marker lat="4.6893468" lng="-74.071344"></div>
+      
     </mgl-map>
 
-    <script>
-    </script>
 
   </body>
 </html>

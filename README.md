@@ -1,5 +1,18 @@
 # mapbox-gl-map-element
-Wrapper element around mapbox-gl map API.
+Wrapper element around mapbox-gl map API.  
+
+### Import
+```
+<link rel="import" href="route/to/mgl-map.html">
+```
+### Use
+```
+<mgl-map lat='0' lng='0' zoom='7' options='{"token": "...", "style": "..."}'>
+  <div marker lat='1' lng='1' class='awesome-marker'></div>
+  <i marker lat='-1' lng='-1' class='cute-marker'></i>
+  <custom-marker marker lat='1' lng='-1'></custom-marker>
+</mgl-map>
+```
 
 ## Dependencies
 
