@@ -44,20 +44,16 @@ Example:
 
   <template>
     <div id="map"></div>
-    <content select="mgl-marker"></content>
     <div id="div-markers">
       <content select="[marker]"></content>
     </div>
+    <content select="mgl-marker"></content>
   </template>
 
 </dom-module>
 
 <script>
 (function() {
-  // When lat, lng, zoom are asigned in a row, 
-  // wait 'WAIT_TIME' before moving the map so it moves just once
-  var WAIT_TIME = 1; // ms
-  
   Polymer({
     is: 'mgl-map',
 
@@ -86,54 +82,61 @@ Example:
       'updateTokenOpt(options.token)',
     ],
 
-    created: function() {
-      this._move = true;
-    },
-
     ready: function() {
-      var self = this,
-        markerElements = this.$['div-markers'].firstElementChild.getDistributedNodes(),
-        mapTransform;
+      var self = this;
       // set map options
       this.options = typeof this.options === 'object' ? this.options : {};
       this.options.container = this.$.map;
       this.mgl = new mapboxgl.Map(this.options);
-      mapTransform = this.mgl.transform;
-
+      
       // resize map to fill container after fully loaded
-      this.mgl.on('load', function() {
-        self.mgl.resize();
-      });
+      this.mgl.on('load', function() { self.mgl.resize(); });
       // set lat, lng, zoom when map changes
       this.mgl.on('moveend', mapMoved.bind(this));
       // manually set lat, lng on initialization
       this.setCenter([this.lat, this.lng]);
       
       // div markers positioning
-      // set container position
-      transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
-      // set markers position
-      positionMarkers(markerElements, mapTransform);
+      this._positionMrksLayer();
+      this._positionMrks();
       // listen to map movement
-      this.mgl.on('move', function(e) {
-        transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
-      });
+      this.mgl.on('move', function() { self._positionMrksLayer(); });
       // relocate markers when zooming
-      this.mgl.on('zoom', function(e) {
-        transform(self.$['div-markers'], -mapTransform.x, -mapTransform.y, -mapTransform.bearing, true);
-        positionMarkers(markerElements, mapTransform);
+      this.mgl.on('zoom', function() {
+        self._positionMrksLayer();
+        self._positionMrks();
       });
-      // rotate markers in the oposite direction of map's rotation
-      this.mgl.on('rotate', function(e) {
-        positionMarkers(markerElements, mapTransform);
+      // markers are rotated in the oposite direction of map's rotation
+      this.mgl.on('rotate', function() { self._positionMrks(); });
+      // position added/modified markers
+      var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+              var element = m.type === 'attributes' ? m.target : m.addedNodes[0];
+              if (element.hasAttribute('marker')) {
+                positionMarker(element, self.mgl.transform);
+              }
+          });
       });
+      observer.observe(this, {childList: true, subtree: true, attributes: true, attributeFilter: ['lat', 'lng']});
+    },
+    
+    _positionMrksLayer: function() {
+      var t = this.mgl.transform;
+      translateRotate(this.$['div-markers'], -t.x, -t.y, -t.bearing, true);
+    },
+    
+    _positionMrks: function() {
+      var markers = this.getContentChildren();
+      markers.forEach(function(m) {
+        positionMarker(m, this.mgl.transform);
+      }, this);
     },
 
     // property changes
     // options changes
     updateStyleOpt: function(style) {
       if (this.mgl) {
-        this.mgl.setStyle(style);      
+        this.mgl.setStyle(style);
       }
     },
     
@@ -146,13 +149,9 @@ Example:
      */
     updatePosition: function(lat, lng, zoom) {
       var self = this;
-      clearTimeout(this._moveTimeout);
-      if (this._move) {
-        this._moveTimeout = setTimeout(function() {
-            jumpTo(self, {center: [lat, lng], zoom: zoom}, true);
-        }, WAIT_TIME);
-      }
-      this._move = true;
+      this.debounce('movemap', function() {
+        jumpTo(self, {center: [lat, lng], zoom: zoom}, true);
+      });
     },
 
     // public methods
@@ -167,21 +166,14 @@ Example:
 
   function mapMoved() {
     var center = this.mgl.getCenter();
-    assignIfDifferent(this, 'lat', center.lat);
-    assignIfDifferent(this, 'lng', center.lng);
-    assignIfDifferent(this, 'zoom', this.mgl.getZoom());
-  }
-
-  function assignIfDifferent(self, name, val) {
-    if (self[name] !== val) {
-      self._move = false;
-      self[name] = val;
-    }
+    this.lat = center.lat;
+    this.lng = center.lng;
+    this.zoom = this.mgl.getZoom();
   }
 
   function jumpTo(self, opts, animate) {
-    var animate = animate || false,
-      options = {
+    animate = animate || false;
+    var options = {
         center: [self.lat, self.lng],
         zoom: self.zoom,
         bearing: 0,
@@ -197,25 +189,19 @@ Example:
     }
   }
   
-  /**
-   *  Position div markers
-   */
-  function positionMarkers(markers, mTransform) {
-    markers = Array.prototype.slice.call(markers);
-    markers.forEach(function(m) {
-      var lat = +m.getAttribute('lat') || 0,
-        lng = +m.getAttribute('lng') || 0,
-        x = mTransform.lngX(lng);
-        y = mTransform.latY(lat);
-      transform(m, x, y, mTransform.bearing);
-    });
+  function positionMarker(element, transform) {
+    var lat = +element.getAttribute('lat') || 0,
+        lng = +element.getAttribute('lng') || 0,
+        x = transform.lngX(lng),
+        y = transform.latY(lat);
+    translateRotate(element, x, y, transform.bearing);
   }
   
-  function transform(ele, x, y, rotate, rotateFirst) {
-    var rotateFirst = rotateFirst || false,
-      rotate = rotate || 0;
-      rotation = 'rotate(' + rotate + 'deg)',
-      translation = 'translate3d(' + x + 'px,' + y + 'px, 0)';
+  function translateRotate(ele, x, y, angle, rotateFirst) {
+    rotateFirst = rotateFirst || false;
+    angle = angle || 0;
+    var rotation = 'rotate(' + angle + 'deg)',
+        translation = 'translate3d(' + x + 'px,' + y + 'px, 0)';
     ele.style.transform = rotateFirst ? rotation + ' ' + translation : translation + ' ' + rotation;
   }
   

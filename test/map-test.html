@@ -100,19 +100,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         test('default zoom level', function() {
-          expect(myMap.zoom).to.equal(10);
+          expect(myMap.zoom).to.equal(5);
         });
 
         test('map zoom matches the "zoom" property', function() {
-          expect(myMap.mgl.getZoom()).to.equal(10);
+          expect(myMap.mgl.getZoom()).to.equal(5);
         });
 
         // TODO find how to test
         test.skip('change zoom property', function() {
-          myMap.zoom = 5;
+          myMap.zoom = 10;
           //
-          expect(Math.round(myMap.mgl.getZoom())).to.equal(5);
-          expect(Math.round(+myMap.getAttribute('zoom'))).to.equal(5);
+          expect(Math.round(myMap.mgl.getZoom())).to.equal(10);
+          expect(Math.round(+myMap.getAttribute('zoom'))).to.equal(10);
         });
 
         test('setZoom', function() {
@@ -156,6 +156,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           }, WAIT_TIME + 1);
         });
+      });
+      
+      suite('div markers', function() {
+        // TODO
       });
     </script>
 
