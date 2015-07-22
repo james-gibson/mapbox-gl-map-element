@@ -112,7 +112,7 @@ Example:
       var observer = new MutationObserver(function(mutations) {
           mutations.forEach(function(m) {
               var element = m.type === 'attributes' ? m.target : m.addedNodes[0];
-              if (element.hasAttribute('marker')) {
+              if (element instanceof HTMLElement && element.hasAttribute('marker')) {
                 positionMarker(element, self.mgl.transform);
               }
           });
