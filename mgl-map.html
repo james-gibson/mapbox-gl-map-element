@@ -97,39 +97,64 @@ Example:
       this.setCenter([this.lat, this.lng]);
       
       // div markers positioning
-      this._positionMrksLayer();
-      this._positionMrks();
+      this._positionMarkersLayer();
+      this._initMarkers();
       // listen to map movement
-      this.mgl.on('move', function() { self._positionMrksLayer(); });
+      this.mgl.on('move', function() { self._positionMarkersLayer(); });
       // relocate markers when zooming
       this.mgl.on('zoom', function() {
-        self._positionMrksLayer();
-        self._positionMrks();
+        self._positionMarkersLayer();
+        self._positionMarkers();
       });
       // markers are rotated in the oposite direction of map's rotation
-      this.mgl.on('rotate', function() { self._positionMrks(); });
-      // position added/modified markers
-      var observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(m) {
-              var element = m.type === 'attributes' ? m.target : m.addedNodes[0];
-              if (element instanceof HTMLElement && element.hasAttribute('marker')) {
-                positionMarker(element, self.mgl.transform);
-              }
-          });
+      this.mgl.on('rotate', function() { self._positionMarkers(); });
+      //
+      onMarkerAdded(this, function(marker) {
+        self._initMarker(marker);
       });
-      observer.observe(this, {childList: true, subtree: true, attributes: true, attributeFilter: ['lat', 'lng']});
     },
     
-    _positionMrksLayer: function() {
+    _positionMarkersLayer: function() {
       var t = this.mgl.transform;
       translateRotate(this.$['div-markers'], -t.x, -t.y, -t.bearing, true);
     },
     
-    _positionMrks: function() {
+    _positionMarkers: function() {
       var markers = this.getContentChildren();
       markers.forEach(function(m) {
-        positionMarker(m, this.mgl.transform);
+        this._positionMarker(m);
       }, this);
+    },
+    
+    _positionMarker: function(element) {
+      var x = this.mgl.transform.lngX(element.lng),
+          y = this.mgl.transform.latY(element.lat);
+      translateRotate(element, x, y, this.mgl.transform.bearing);
+    },
+    
+    _initMarkers: function() {
+      var markers = this.getContentChildren();
+      markers.forEach(function(m) {
+        this._initMarker(m);
+      }, this);
+    },
+    
+    _initMarker: function(element) {
+      var self = this, api;
+      if (element.isMarker) {
+        return;
+      }
+      api = {
+        lat: +element.getAttribute('lat') || 0, 
+        lng: +element.getAttribute('lng') || 0
+      };
+      Polymer.Base.extend(element, api);
+      Object.defineProperty(element, 'isMarker', {value: true});
+      this._positionMarker(element);
+      //
+      observeTwoWay(element, ['lat', 'lng'], function() {
+        self._positionMarker(element);
+      });
     },
 
     // property changes
@@ -189,12 +214,16 @@ Example:
     }
   }
   
-  function positionMarker(element, transform) {
-    var lat = +element.getAttribute('lat') || 0,
-        lng = +element.getAttribute('lng') || 0,
-        x = transform.lngX(lng),
-        y = transform.latY(lat);
-    translateRotate(element, x, y, transform.bearing);
+  function onMarkerAdded(map, callback) {
+    var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+              var element = m.addedNodes[0];
+              if (element instanceof HTMLElement && element.hasAttribute('marker')) {
+                callback(element);
+              }
+          });
+      });
+    observer.observe(map, {childList: true, subtree: true});
   }
   
   function translateRotate(ele, x, y, angle, rotateFirst) {
@@ -203,6 +232,48 @@ Example:
     var rotation = 'rotate(' + angle + 'deg)',
         translation = 'translate3d(' + x + 'px,' + y + 'px, 0)';
     ele.style.transform = rotateFirst ? rotation + ' ' + translation : translation + ' ' + rotation;
+  }
+  
+  function observeTwoWay(element, properties, callback) {
+    // observe property changes and update attributes
+    Object.observe(element, function(changes) {
+      changes.forEach(function(c) {
+        if (properties.indexOf(c.name) >= 0) {
+          element.setAttribute(c.name, c.object[c.name]);
+          if (typeof callback === 'function') {
+            callback();
+          }
+        }
+      });
+    });
+    // observe attribute changes and update properties
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        var name = m.attributeName,
+          type = getType(element[name]),
+          value = Polymer.Base.deserialize(m.target.getAttribute(name), type);
+        m.target[name] = value;
+        if (typeof callback === 'function') {
+          callback();
+        }
+      });
+    });
+    observer.observe(element, {attributes: true, attributeFilter: properties});
+  }
+  
+  function getType(value) {
+    var type = typeof value;
+    switch (type) {
+      case 'number':
+        return Number;
+      case 'string':
+        return String;
+      case 'boolean':
+        return Boolean;
+      case 'object':
+        return value instanceof Date ? Date
+          : value instanceof Array ? Array : Object;
+    }
   }
   
 })();
