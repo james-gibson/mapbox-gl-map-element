@@ -54,6 +54,9 @@ Example:
 
 <script>
 (function() {
+  // When properties are changed wait DEBOUNCE_TIME to jump to new location once.
+  var DEBOUNCE_TIME = 100;
+  
   Polymer({
     is: 'mgl-map',
 
@@ -80,7 +83,14 @@ Example:
       'updatePosition(lat, lng, zoom)',
       'updateStyleOpt(options.style)',
       'updateTokenOpt(options.token)',
+      'updateMinZoom(options.minZoom)',
+      'updateMaxZoom(options.maxZoom)'
     ],
+    
+    created: function() {
+      // don't re-jump to location on 'moveend'
+      this._moveMap = true;
+    },
 
     ready: function() {
       var self = this;
@@ -89,8 +99,6 @@ Example:
       this.options.container = this.$.map;
       this.mgl = new mapboxgl.Map(this.options);
       
-      // resize map to fill container after fully loaded
-      this.mgl.on('load', function() { self.mgl.resize(); });
       // set lat, lng, zoom when map changes
       this.mgl.on('moveend', mapMoved.bind(this));
       // manually set lat, lng on initialization
@@ -112,6 +120,56 @@ Example:
       onMarkerAdded(this, function(marker) {
         self._initMarker(marker);
       });
+    },
+    
+    attached: function() {
+      // When map is in the DOM resize canvas to fit element's size
+      this.mgl.resize();
+    },
+    
+    // properties changes
+    /**
+     *  
+     */
+    updatePosition: function(lat, lng, zoom) {
+      var self = this;
+      if (this._moveMap) {
+        this.debounce('movemap', function() {
+          jumpTo(self, {center: [lat, lng], zoom: zoom}, true);
+        }, DEBOUNCE_TIME);
+      }
+    },
+
+    // options changes
+    updateStyleOpt: function(style) {
+      if (this.mgl) {
+        this.mgl.setStyle(style);
+      }
+    },
+    
+    updateTokenOpt: function(token) {
+      mapboxgl.accessToken = token;
+    },
+    
+    updateMinZoom: function(zoom) {
+      if (this.mgl) {
+        this.mgl.transform.minZoom = zoom;
+      }
+    },
+    
+    updateMaxZoom: function(zoom) {
+      if (this.mgl) {
+        this.mgl.transform.maxZoom = zoom;
+      }
+    },
+    
+    // public methods
+    setCenter: function(center, animate) {
+      jumpTo(this, {center: center}, animate);
+    },
+
+    setZoom: function(zoom, animate) {
+      jumpTo(this, {zoom: zoom}, animate);
     },
     
     _positionMarkersLayer: function() {
@@ -155,45 +213,16 @@ Example:
       observeTwoWay(element, ['lat', 'lng'], function() {
         self._positionMarker(element);
       });
-    },
-
-    // property changes
-    // options changes
-    updateStyleOpt: function(style) {
-      if (this.mgl) {
-        this.mgl.setStyle(style);
-      }
-    },
-    
-    updateTokenOpt: function(token) {
-      mapboxgl.accessToken = token;
-    },
-    
-    /**
-     *  
-     */
-    updatePosition: function(lat, lng, zoom) {
-      var self = this;
-      this.debounce('movemap', function() {
-        jumpTo(self, {center: [lat, lng], zoom: zoom}, true);
-      });
-    },
-
-    // public methods
-    setCenter: function(center, animate) {
-      jumpTo(this, {center: center}, animate);
-    },
-
-    setZoom: function(zoom, animate) {
-      jumpTo(this, {zoom: zoom}, animate);
     }
   });
 
   function mapMoved() {
     var center = this.mgl.getCenter();
+    this._moveMap = false;
     this.lat = center.lat;
     this.lng = center.lng;
     this.zoom = this.mgl.getZoom();
+    this._moveMap = true;
   }
 
   function jumpTo(self, opts, animate) {

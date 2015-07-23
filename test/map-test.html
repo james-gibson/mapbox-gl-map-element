@@ -43,9 +43,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         // TODO support observing more options
-        test.skip('option.interactive', function() {});          
-        test.skip('option.minZoom', function() {});
-        test.skip('option.maxZoom', function() {});
+        test.skip('option.interactive', function() {});
+          
+        test('option.minZoom', function() {
+          myMap.set('options.minZoom', 3);
+          expect(myMap.mgl.transform.minZoom).to.equal(3);
+        });
+        
+        test('option.maxZoom', function() {
+          myMap.set('options.maxZoom', 16);
+          expect(myMap.mgl.transform.maxZoom).to.equal(16);
+        });
+        
         test.skip('option.bearing', function() {});
         test.skip('option.pitch', function() {});
         test.skip('option.scrollZoom', function() {});
