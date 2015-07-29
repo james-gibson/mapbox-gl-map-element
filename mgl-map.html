@@ -35,7 +35,7 @@ Example:
       width: 0;
       z-index: 1;
     }
-    #div-markers content::content [marker] {
+    content::content > * {
       left: 0;
       position: absolute;
       top: 0;
@@ -48,6 +48,7 @@ Example:
       <content select="[marker]"></content>
     </div>
     <content select="mgl-marker"></content>
+    <content></content>
   </template>
 
 </dom-module>
@@ -56,7 +57,7 @@ Example:
 (function() {
   // When properties are changed wait DEBOUNCE_TIME to jump to new location once.
   var DEBOUNCE_TIME = 100;
-  
+
   Polymer({
     is: 'mgl-map',
 
@@ -86,7 +87,7 @@ Example:
       'updateMinZoom(options.minZoom)',
       'updateMaxZoom(options.maxZoom)'
     ],
-    
+
     created: function() {
       // don't re-jump to location on 'moveend'
       this._moveMap = true;
@@ -98,12 +99,12 @@ Example:
       this.options = typeof this.options === 'object' ? this.options : {};
       this.options.container = this.$.map;
       this.mgl = new mapboxgl.Map(this.options);
-      
+
       // set lat, lng, zoom when map changes
       this.mgl.on('moveend', mapMoved.bind(this));
       // manually set lat, lng on initialization
       this.setCenter([this.lat, this.lng]);
-      
+
       // div markers positioning
       this._positionMarkersLayer();
       this._initMarkers();
@@ -121,15 +122,15 @@ Example:
         self._initMarker(marker);
       });
     },
-    
+
     attached: function() {
       // When map is in the DOM resize canvas to fit element's size
       this.mgl.resize();
     },
-    
+
     // properties changes
     /**
-     *  
+     *
      */
     updatePosition: function(lat, lng, zoom) {
       var self = this;
@@ -146,23 +147,23 @@ Example:
         this.mgl.setStyle(style);
       }
     },
-    
+
     updateTokenOpt: function(token) {
       mapboxgl.accessToken = token;
     },
-    
+
     updateMinZoom: function(zoom) {
       if (this.mgl) {
         this.mgl.transform.minZoom = zoom;
       }
     },
-    
+
     updateMaxZoom: function(zoom) {
       if (this.mgl) {
         this.mgl.transform.maxZoom = zoom;
       }
     },
-    
+
     // public methods
     setCenter: function(center, animate) {
       jumpTo(this, {center: center}, animate);
@@ -171,39 +172,39 @@ Example:
     setZoom: function(zoom, animate) {
       jumpTo(this, {zoom: zoom}, animate);
     },
-    
+
     _positionMarkersLayer: function() {
       var t = this.mgl.transform;
       translateRotate(this.$['div-markers'], -t.x, -t.y, -t.bearing, true);
     },
-    
+
     _positionMarkers: function() {
       var markers = this.getContentChildren();
       markers.forEach(function(m) {
         this._positionMarker(m);
       }, this);
     },
-    
+
     _positionMarker: function(element) {
       var x = this.mgl.transform.lngX(element.lng),
           y = this.mgl.transform.latY(element.lat);
       translateRotate(element, x, y, this.mgl.transform.bearing);
     },
-    
+
     _initMarkers: function() {
       var markers = this.getContentChildren();
       markers.forEach(function(m) {
         this._initMarker(m);
       }, this);
     },
-    
+
     _initMarker: function(element) {
       var self = this, api;
       if (element.isMarker) {
         return;
       }
       api = {
-        lat: +element.getAttribute('lat') || 0, 
+        lat: +element.getAttribute('lat') || 0,
         lng: +element.getAttribute('lng') || 0
       };
       Polymer.Base.extend(element, api);
@@ -242,7 +243,7 @@ Example:
       }
     }
   }
-  
+
   function onMarkerAdded(map, callback) {
     var observer = new MutationObserver(function(mutations) {
           mutations.forEach(function(m) {
@@ -254,7 +255,7 @@ Example:
       });
     observer.observe(map, {childList: true, subtree: true});
   }
-  
+
   function translateRotate(ele, x, y, angle, rotateFirst) {
     rotateFirst = rotateFirst || false;
     angle = angle || 0;
@@ -262,7 +263,7 @@ Example:
         translation = 'translate3d(' + x + 'px,' + y + 'px, 0)';
     ele.style.transform = rotateFirst ? rotation + ' ' + translation : translation + ' ' + rotation;
   }
-  
+
   function observeTwoWay(element, properties, callback) {
     // observe property changes and update attributes
     Object.observe(element, function(changes) {
@@ -289,7 +290,7 @@ Example:
     });
     observer.observe(element, {attributes: true, attributeFilter: properties});
   }
-  
+
   function getType(value) {
     var type = typeof value;
     switch (type) {
@@ -304,6 +305,6 @@ Example:
           : value instanceof Array ? Array : Object;
     }
   }
-  
+
 })();
 </script>
